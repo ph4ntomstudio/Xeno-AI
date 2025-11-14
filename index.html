@@ -1,305 +1,615 @@
+<!DOCTYPE html>
 <html lang="id">
- <head> 
-  <meta charset="UTF-8"> 
-  <meta name="viewport" content="width=device-width, initial-scale=1"> 
-  <title>Xeno AI</title> 
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <title>Xeno AI</title>
   <link rel="icon" type="image/png" href="https://files.catbox.moe/uquopn.png">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"> 
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> 
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-  /* Variabel CSS tetap sama */
-  :root {
-    --primary: #00FFFF;
-    --primary-dark: #00E5E5;
-    --secondary: #FF7557;
-    --dark: #1F2A37;
-    --darker: #111928;
-    --light: #F9FAFB;
-    --gray: #9CA3AF;
-    --border: rgba(255, 255, 255, 0.1);
-    --chat-bg-user: #00AEEF;
-    --chat-bg-ai: #2A2F45;
-    --sidebar-bg: #1A2233;
-    --backdrop: rgba(0, 0, 0, 0.6);
-  }
-  * {
-    margin: 0; padding: 0; box-sizing: border-box;
-    font-family: 'Poppins', sans-serif;
-  }
-  body {
-    color: var(--light);
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    z-index: 1;
-    overflow: hidden;
-  }
-  /* CANVAS Partikel Diletakkan di bawah semua konten */
-  #particles-js {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2;
-    background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
-  }
-  
-  /* PERBAIKAN UTAMA UNTUK MENGATASI CHAT CONTAINER DAN INPUT AREA */
-  
-  /* #main-content sekarang mengisi 100% tinggi yang tersisa dan tidak scroll */
-  #main-content {
-    flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; z-index: 1;
-  }
-  
-  header {
-    padding: 20px; display: flex; align-items: center; justify-content: center;
-    font-size: 24px; font-weight: 700; border-bottom: 1px solid var(--border);
-    background: rgba(17, 25, 40, 0.8); backdrop-filter: blur(5px); z-index: 2;
-    position: relative;
-  }
-  #menu-toggle-btn {
-    position: absolute; left: 20px; top: 50%; transform: translateY(-50%);
-    background: none; border: none; color: var(--light); font-size: 24px; cursor: pointer;
-    transition: color 0.3s; z-index: 3;
-  }
-  #menu-toggle-btn:hover { color: var(--primary); }
-  
-  /* Perbaikan Sidebar Positioning dan Z-index */
-  #sidebar-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--backdrop);
-    z-index: 50; visibility: hidden; opacity: 0; transition: opacity 0.3s;
-  }
-  #sidebar-content {
-    position: fixed;
-    top: 0; left: 0; 
-    width: 280px; height: 100%; background: var(--sidebar-bg); padding-top: 20px;
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5); transform: translateX(-100%);
-    transition: transform 0.3s ease-out; display: flex; flex-direction: column;
-    z-index: 51;
-  }
-  #sidebar-overlay.active { visibility: visible; opacity: 1; }
-  #sidebar-overlay.active #sidebar-content { transform: translateX(0); }
-  
-  /* Sisanya (chat history, chat container, input area) tetap sama */
-  .sidebar-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 20px 20px 20px; font-size: 20px; font-weight: 700; color: var(--primary);
-    border-bottom: 1px solid var(--border); margin-bottom: 10px;
-  }
-  .new-chat-btn {
-    background: var(--primary); color: var(--darker); padding: 8px 15px; border: none;
-    border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 600;
-    transition: background 0.3s;
-  }
-  .new-chat-btn:hover { background: var(--primary-dark); }
-  .chat-history {
-    flex: 1; overflow-y: auto; padding: 0;
-  }
-  .chat-item {
-    padding: 10px 20px; font-size: 14px; color: var(--gray); cursor: pointer;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background 0.2s;
-    border-left: 3px solid transparent;
-    position: relative;
-  }
-  .chat-item:hover { background: rgba(255, 255, 255, 0.05); }
-  .chat-item.active {
-    background: rgba(0, 255, 255, 0.1); border-left: 3px solid var(--primary);
-    font-weight: 500; color: var(--light);
-  }
-  .chat-item i { margin-right: 10px; color: inherit; }
-  
-  /* Menu konteks untuk riwayat chat */
-  .chat-context-menu {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    opacity: 0;
-    transition: opacity 0.2s;
-  }
-  .chat-item:hover .chat-context-menu {
-    opacity: 1;
-  }
-  .context-btn {
-    background: transparent;
-    border: none;
-    color: var(--gray);
-    cursor: pointer;
-    padding: 5px;
-    border-radius: 4px;
-    transition: all 0.2s;
-  }
-  .context-btn:hover {
-    color: var(--primary);
-    background: rgba(255, 255, 255, 0.1);
-  }
-  
-  /* Modal edit nama chat */
-  .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s;
-  }
-  .modal-overlay.active {
-    opacity: 1;
-    visibility: visible;
-  }
-  .modal-content {
-    background: var(--darker);
-    padding: 20px;
-    border-radius: 12px;
-    width: 90%;
-    max-width: 400px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-  }
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-  }
-  .modal-title {
-    font-size: 18px;
-    font-weight: 600;
-  }
-  .close-modal {
-    background: transparent;
-    border: none;
-    color: var(--gray);
-    font-size: 20px;
-    cursor: pointer;
-  }
-  .close-modal:hover {
-    color: var(--light);
-  }
-  .modal-input {
-    width: 100%;
-    padding: 10px 15px;
-    background: var(--dark);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--light);
-    font-size: 16px;
-    margin-bottom: 15px;
-  }
-  .modal-input:focus {
-    outline: none;
-    border-color: var(--primary);
-  }
-  .modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-  }
-  .modal-btn {
-    padding: 8px 15px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    font-weight: 500;
-    transition: all 0.2s;
-  }
-  .modal-btn.cancel {
-    background: transparent;
-    color: var(--gray);
-  }
-  .modal-btn.cancel:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--light);
-  }
-  .modal-btn.save {
-    background: var(--primary);
-    color: var(--darker);
-  }
-  .modal-btn.save:hover {
-    background: var(--primary-dark);
-  }
-  
-  /* PERBAIKAN 1: #chat-container sekarang adalah area scroll utama */
-  #chat-container {
-    flex: 1; 
-    overflow-y: auto; /* Ini yang membuat konten chat bisa di-scroll */
-    padding: 20px; 
-    display: flex; 
-    flex-direction: column; 
-    gap: 15px;
+    /* Variabel CSS */
+    :root {
+      --primary: #00FFFF;
+      --primary-dark: #00E5E5;
+      --secondary: #FF7557;
+      --dark: #1F2A37;
+      --darker: #111928;
+      --light: #F9FAFB;
+      --gray: #9CA3AF;
+      --border: rgba(255, 255, 255, 0.1);
+      --chat-bg-user: #00AEEF;
+      --chat-bg-ai: #2A2F45;
+      --sidebar-bg: #1A2233;
+      --backdrop: rgba(0, 0, 0, 0.6);
+    }
     
-    /* PENTING: Tambahkan padding bawah agar konten chat tidak tertutup fixed input */
-    padding-bottom: 120px; 
+    * {
+      margin: 0; 
+      padding: 0; 
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
     
-    /* Gunakan padding-top untuk memastikan pesan pertama tidak tertutup header jika diperlukan, 
-       tapi di struktur ini header sudah di luar flex container */
-  }
-  
-  .message {
-    max-width: 70%; padding: 12px 18px; border-radius: 20px; line-height: 1.4;
-    font-size: 16px; white-space: pre-wrap; word-wrap: break-word; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
-  }
-  .user { align-self: flex-end; background: var(--chat-bg-user); color: white; border-bottom-right-radius: 4px; }
-  .ai { align-self: flex-start; background: var(--chat-bg-ai); color: var(--light); border-bottom-left-radius: 4px; }
-  
-  /* PERBAIKAN 2: #file-preview di-fixed tepat di atas #input-area */
-  #file-preview { 
-    position: fixed; 
-    bottom: 70px; /* Di atas input area (sekitar 70px) */
-    left: 0; 
-    width: 100%;
-    z-index: 9; /* Di bawah input area, di atas chat */
+    body {
+      color: var(--light);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      z-index: 1;
+      overflow: hidden;
+      background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+    }
     
-    display: flex; gap: 10px; padding: 0 20px 10px 20px; overflow-x: auto; background: transparent; 
-  }
-  .file-item {
-    background: var(--dark); border: 1px solid var(--border); border-radius: 12px; padding: 6px 10px;
-    display: flex; align-items: center; gap: 6px; min-width: 100px; font-size: 14px; cursor: default;
-  }
-  .file-item i { color: var(--primary); }
-  .file-remove { margin-left: auto; color: var(--gray); cursor: pointer; }
-  .file-remove:hover { color: var(--secondary); }
-  
-  /* PERBAIKAN 3: #input-area di-fixed di paling bawah */
-  #input-area {
-    position: fixed; 
-    bottom: 0; 
-    left: 0; 
-    width: 100%;
-    z-index: 10;
+    /* Canvas Partikel */
+    #particles-js {
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      width: 100%; 
+      height: 100%; 
+      z-index: -2;
+      background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+    }
     
-    display: flex; align-items: center; padding: 10px 20px; border-top: 1px solid var(--border);
-    background: rgba(17, 25, 40, 0.8); backdrop-filter: blur(5px);
-  }
-  
-  #upload-btn { background: transparent; border: none; color: var(--primary); font-size: 24px; cursor: pointer; margin-right: 10px; transition: color 0.3s ease; }
-  #upload-btn:hover { color: var(--primary-dark); }
-  #file-input { display: none; }
-  #prompt-input { flex: 1; background: var(--dark); border: none; border-radius: 20px; padding: 12px 18px; font-size: 16px; color: var(--light); resize: none; min-height: 40px; max-height: 120px; overflow-y: auto; }
-  #prompt-input:focus { outline: none; box-shadow: 0 0 0 2px var(--primary); }
-  #send-btn { background: var(--primary); border: none; color: var(--darker); padding: 10px 18px; border-radius: 20px; margin-left: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: background 0.3s ease; }
-  #send-btn:disabled { background: var(--gray); color: white; cursor: not-allowed; }
-  #send-btn:hover:not(:disabled) { background: var(--primary-dark); color: var(--darker); }
-  @keyframes blink { 0%, 80%, 100% { opacity: 0; } 40% { opacity: 1; } }
-  .logo-img {
-  width: 36px;
-  height: 36px;
-  object-fit: contain;
-  vertical-align: middle;
-  margin-right: 10px;
-  filter: drop-shadow(0 0 6px var(--primary));
-}
-  .typing { display: inline-block; width: 6px; height: 6px; margin: 0 2px; background: var(--light); border-radius: 50%; opacity: 0.4; animation-name: blink; animation-duration: 1.4s; animation-iteration-count: infinite; }
-  .typing:nth-child(1) { animation-delay: 0s; }
-  .typing:nth-child(2) { animation-delay: 0.2s; }
-  .typing:nth-child(3) { animation-delay: 0.4s; }
-</style> 
- </head> 
- <body> 
-  <canvas id="particles-js" width="601" height="885"></canvas> 
+    /* Konten Utama */
+    #main-content {
+      flex: 1; 
+      display: flex; 
+      flex-direction: column; 
+      position: relative; 
+      overflow: hidden; 
+      z-index: 1;
+    }
+    
+    /* Header */
+    header {
+      padding: 15px 20px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      font-size: 20px; 
+      font-weight: 700; 
+      border-bottom: 1px solid var(--border);
+      background: rgba(17, 25, 40, 0.8); 
+      backdrop-filter: blur(5px); 
+      z-index: 2;
+      position: relative;
+      min-height: 60px;
+    }
+    
+    #menu-toggle-btn {
+      position: absolute; 
+      left: 15px; 
+      top: 50%; 
+      transform: translateY(-50%);
+      background: none; 
+      border: none; 
+      color: var(--light); 
+      font-size: 22px; 
+      cursor: pointer;
+      transition: color 0.3s; 
+      z-index: 3;
+      padding: 8px;
+      border-radius: 5px;
+    }
+    
+    #menu-toggle-btn:hover { 
+      color: var(--primary); 
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Sidebar */
+    #sidebar-overlay {
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      width: 100%; 
+      height: 100%; 
+      background: var(--backdrop);
+      z-index: 50; 
+      visibility: hidden; 
+      opacity: 0; 
+      transition: opacity 0.3s;
+    }
+    
+    #sidebar-content {
+      position: fixed;
+      top: 0; 
+      left: 0; 
+      width: 280px; 
+      height: 100%; 
+      background: var(--sidebar-bg); 
+      padding-top: 20px;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5); 
+      transform: translateX(-100%);
+      transition: transform 0.3s ease-out; 
+      display: flex; 
+      flex-direction: column;
+      z-index: 51;
+      overflow: hidden;
+    }
+    
+    #sidebar-overlay.active { 
+      visibility: visible; 
+      opacity: 1; 
+    }
+    
+    #sidebar-overlay.active #sidebar-content { 
+      transform: translateX(0); 
+    }
+    
+    .sidebar-header {
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between;
+      padding: 0 20px 20px 20px; 
+      font-size: 18px; 
+      font-weight: 700; 
+      color: var(--primary);
+      border-bottom: 1px solid var(--border); 
+      margin-bottom: 10px;
+    }
+    
+    .new-chat-btn {
+      background: var(--primary); 
+      color: var(--darker); 
+      padding: 8px 12px; 
+      border: none;
+      border-radius: 8px; 
+      font-size: 14px; 
+      cursor: pointer; 
+      font-weight: 600;
+      transition: background 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    .new-chat-btn:hover { 
+      background: var(--primary-dark); 
+    }
+    
+    .chat-history {
+      flex: 1; 
+      overflow-y: auto; 
+      padding: 0;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .chat-item {
+      padding: 12px 20px; 
+      font-size: 14px; 
+      color: var(--gray); 
+      cursor: pointer;
+      white-space: nowrap; 
+      overflow: hidden; 
+      text-overflow: ellipsis; 
+      transition: background 0.2s;
+      border-left: 3px solid transparent;
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    
+    .chat-item:hover { 
+      background: rgba(255, 255, 255, 0.05); 
+    }
+    
+    .chat-item.active {
+      background: rgba(0, 255, 255, 0.1); 
+      border-left: 3px solid var(--primary);
+      font-weight: 500; 
+      color: var(--light);
+    }
+    
+    .chat-item i { 
+      margin-right: 10px; 
+      color: inherit; 
+      flex-shrink: 0;
+    }
+    
+    .chat-item-text {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    /* Menu konteks untuk riwayat chat */
+    .chat-context-menu {
+      display: flex;
+      gap: 5px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      flex-shrink: 0;
+    }
+    
+    .chat-item:hover .chat-context-menu {
+      opacity: 1;
+    }
+    
+    .context-btn {
+      background: transparent;
+      border: none;
+      color: var(--gray);
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 4px;
+      transition: all 0.2s;
+      font-size: 14px;
+    }
+    
+    .context-btn:hover {
+      color: var(--primary);
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Modal edit nama chat */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s;
+    }
+    
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .modal-content {
+      background: var(--darker);
+      padding: 20px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .close-modal {
+      background: transparent;
+      border: none;
+      color: var(--gray);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 5px;
+    }
+    
+    .close-modal:hover {
+      color: var(--light);
+    }
+    
+    .modal-input {
+      width: 100%;
+      padding: 12px 15px;
+      background: var(--dark);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--light);
+      font-size: 16px;
+      margin-bottom: 15px;
+    }
+    
+    .modal-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    
+    .modal-btn {
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+      font-size: 14px;
+    }
+    
+    .modal-btn.cancel {
+      background: transparent;
+      color: var(--gray);
+    }
+    
+    .modal-btn.cancel:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--light);
+    }
+    
+    .modal-btn.save {
+      background: var(--primary);
+      color: var(--darker);
+    }
+    
+    .modal-btn.save:hover {
+      background: var(--primary-dark);
+    }
+    
+    /* Area Chat */
+    #chat-container {
+      flex: 1; 
+      overflow-y: auto; 
+      padding: 15px; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 15px;
+      padding-bottom: 120px; 
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .message {
+      max-width: 85%; 
+      padding: 12px 16px; 
+      border-radius: 18px; 
+      line-height: 1.4;
+      font-size: 15px; 
+      white-space: pre-wrap; 
+      word-wrap: break-word; 
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+    
+    .user { 
+      align-self: flex-end; 
+      background: var(--chat-bg-user); 
+      color: white; 
+      border-bottom-right-radius: 4px; 
+    }
+    
+    .ai { 
+      align-self: flex-start; 
+      background: var(--chat-bg-ai); 
+      color: var(--light); 
+      border-bottom-left-radius: 4px; 
+    }
+    
+    /* Preview File */
+    #file-preview { 
+      position: fixed; 
+      bottom: 70px; 
+      left: 0; 
+      width: 100%;
+      z-index: 9;
+      display: flex; 
+      gap: 10px; 
+      padding: 0 15px 10px 15px; 
+      overflow-x: auto; 
+      background: transparent;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .file-item {
+      background: var(--dark); 
+      border: 1px solid var(--border); 
+      border-radius: 12px; 
+      padding: 8px 12px;
+      display: flex; 
+      align-items: center; 
+      gap: 6px; 
+      min-width: 120px; 
+      font-size: 14px; 
+      cursor: default;
+      flex-shrink: 0;
+    }
+    
+    .file-item i { 
+      color: var(--primary); 
+    }
+    
+    .file-remove { 
+      margin-left: auto; 
+      color: var(--gray); 
+      cursor: pointer; 
+      padding: 3px;
+    }
+    
+    .file-remove:hover { 
+      color: var(--secondary); 
+    }
+    
+    /* Area Input */
+    #input-area {
+      position: fixed; 
+      bottom: 0; 
+      left: 0; 
+      width: 100%;
+      z-index: 10;
+      display: flex; 
+      align-items: flex-end; 
+      padding: 12px 15px; 
+      border-top: 1px solid var(--border);
+      background: rgba(17, 25, 40, 0.9); 
+      backdrop-filter: blur(5px);
+      gap: 10px;
+    }
+    
+    #upload-btn { 
+      background: transparent; 
+      border: none; 
+      color: var(--primary); 
+      font-size: 22px; 
+      cursor: pointer; 
+      transition: color 0.3s ease; 
+      padding: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    
+    #upload-btn:hover { 
+      color: var(--primary-dark); 
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    #file-input { 
+      display: none; 
+    }
+    
+    #prompt-input { 
+      flex: 1; 
+      background: var(--dark); 
+      border: none; 
+      border-radius: 20px; 
+      padding: 12px 16px; 
+      font-size: 15px; 
+      color: var(--light); 
+      resize: none; 
+      min-height: 44px; 
+      max-height: 120px; 
+      overflow-y: auto;
+      line-height: 1.4;
+    }
+    
+    #prompt-input:focus { 
+      outline: none; 
+      box-shadow: 0 0 0 2px var(--primary); 
+    }
+    
+    #send-btn { 
+      background: var(--primary); 
+      border: none; 
+      color: var(--darker); 
+      padding: 10px 16px; 
+      border-radius: 20px; 
+      cursor: pointer; 
+      font-weight: 600; 
+      display: flex; 
+      align-items: center; 
+      gap: 6px; 
+      transition: background 0.3s ease; 
+      flex-shrink: 0;
+      font-size: 14px;
+    }
+    
+    #send-btn:disabled { 
+      background: var(--gray); 
+      color: white; 
+      cursor: not-allowed; 
+    }
+    
+    #send-btn:hover:not(:disabled) { 
+      background: var(--primary-dark); 
+      color: var(--darker); 
+    }
+    
+    /* Animasi */
+    @keyframes blink { 
+      0%, 80%, 100% { 
+        opacity: 0; 
+      } 
+      40% { 
+        opacity: 1; 
+      } 
+    }
+    
+    .logo-img {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+      vertical-align: middle;
+      margin-right: 10px;
+      filter: drop-shadow(0 0 6px var(--primary));
+    }
+    
+    .typing { 
+      display: inline-block; 
+      width: 6px; 
+      height: 6px; 
+      margin: 0 2px; 
+      background: var(--light); 
+      border-radius: 50%; 
+      opacity: 0.4; 
+      animation-name: blink; 
+      animation-duration: 1.4s; 
+      animation-iteration-count: infinite; 
+    }
+    
+    .typing:nth-child(1) { 
+      animation-delay: 0s; 
+    }
+    
+    .typing:nth-child(2) { 
+      animation-delay: 0.2s; 
+    }
+    
+    .typing:nth-child(3) { 
+      animation-delay: 0.4s; 
+    }
+    
+    /* Responsif untuk perangkat mobile */
+    @media (max-width: 480px) {
+      header {
+        padding: 12px 15px;
+        font-size: 18px;
+      }
+      
+      #sidebar-content {
+        width: 85%;
+        max-width: 300px;
+      }
+      
+      .message {
+        max-width: 90%;
+        padding: 10px 14px;
+        font-size: 14px;
+      }
+      
+      #input-area {
+        padding: 10px 12px;
+      }
+      
+      #prompt-input {
+        padding: 10px 14px;
+        font-size: 14px;
+      }
+      
+      #send-btn {
+        padding: 8px 14px;
+        font-size: 13px;
+      }
+      
+      .modal-content {
+        width: 95%;
+        padding: 15px;
+      }
+    }
+    
+    /* Perbaikan untuk iOS */
+    input, textarea, button {
+      -webkit-appearance: none;
+      border-radius: 0;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particles-js"></canvas>
   
   <!-- Modal untuk edit nama chat -->
   <div class="modal-overlay" id="edit-modal">
@@ -316,527 +626,589 @@
     </div>
   </div>
   
-  <div id="sidebar-overlay"> 
-   <div id="sidebar-content"> 
-    <div class="sidebar-header">
-      Riwayat Chat 
-     <button class="new-chat-btn"><i class="fas fa-plus"></i> Baru</button> 
-    </div> 
-    <div class="chat-history">
-     <div style="padding: 20px; color: var(--gray); text-align: center;">
-      Riwayat kosong. Mulai chat baru!
-     </div>
-    </div> 
-   </div> 
-  </div> 
-  <div id="main-content"> 
-   <header> 
-    <button id="menu-toggle-btn" aria-label="Buka Riwayat Chat"><i class="fas fa-bars"></i></button> 
-    <img src="https://files.catbox.moe/uquopn.png" alt="Xeno AI" class="logo-img"> Xeno AI
-   </header> 
-   <div id="chat-container" aria-live="polite" aria-atomic="false">
-    <div class="message ai">
-     Halo! Saya Xeno AI, siap membantu Anda. Apa yang bisa saya rangkum atau buatkan untuk Anda hari ini?
+  <div id="sidebar-overlay">
+    <div id="sidebar-content">
+      <div class="sidebar-header">
+        Riwayat Chat
+        <button class="new-chat-btn"><i class="fas fa-plus"></i> Baru</button>
+      </div>
+      <div class="chat-history">
+        <div style="padding: 20px; color: var(--gray); text-align: center;">
+          Riwayat kosong. Mulai chat baru!
+        </div>
+      </div>
     </div>
-   </div> 
-   <div id="file-preview" aria-label="Preview file yang diunggah"></div> 
-   <div id="input-area"> 
-    <button id="upload-btn" aria-label="Unggah file"><i class="fas fa-plus"></i></button> 
-    <input type="file" id="file-input" multiple aria-label="Pilih file untuk diunggah"> 
-    <textarea id="prompt-input" rows="1" placeholder="Ketik pesan Anda..." aria-multiline="true" style="height: 43px;"></textarea> 
-    <button id="send-btn" disabled aria-label="Kirim pesan"><i class="fas fa-paper-plane"></i> Kirim</button> 
-   </div> 
-  </div> 
+  </div>
+  
+  <div id="main-content">
+    <header>
+      <button id="menu-toggle-btn" aria-label="Buka Riwayat Chat"><i class="fas fa-bars"></i></button>
+      <img src="https://files.catbox.moe/uquopn.png" alt="Xeno AI" class="logo-img"> Xeno AI
+    </header>
+    
+    <div id="chat-container" aria-live="polite" aria-atomic="false">
+      <div class="message ai">
+        Halo! Saya Xeno AI, siap membantu Anda. Apa yang bisa saya rangkum atau buatkan untuk Anda hari ini?
+      </div>
+    </div>
+    
+    <div id="file-preview" aria-label="Preview file yang diunggah"></div>
+    
+    <div id="input-area">
+      <button id="upload-btn" aria-label="Unggah file"><i class="fas fa-plus"></i></button>
+      <input type="file" id="file-input" multiple aria-label="Pilih file untuk diunggah">
+      <textarea id="prompt-input" rows="1" placeholder="Ketik pesan Anda..." aria-multiline="true"></textarea>
+      <button id="send-btn" disabled aria-label="Kirim pesan"><i class="fas fa-paper-plane"></i> Kirim</button>
+    </div>
+  </div>
+
   <script>
-  // ------------------------------------
-  // SCRIPT ANIMASI PARTIKEL (Particles.js minimalis - DITINGKATKAN)
-  // ------------------------------------
-  (function() {
-    const canvas = document.getElementById('particles-js');
-    const ctx = canvas.getContext('2d');
-    let W, H, particles;
-    const particleCount = 100;
-    const maxDistance = 100;
+    // ------------------------------------
+    // SCRIPT ANIMASI PARTIKEL (Particles.js minimalis - DITINGKATKAN)
+    // ------------------------------------
+    (function() {
+      const canvas = document.getElementById('particles-js');
+      const ctx = canvas.getContext('2d');
+      let W, H, particles;
+      const particleCount = 80; // Dikurangi untuk performa mobile
+      const maxDistance = 100;
 
-    function Particle() {
-      this.x = Math.random() * W;
-      this.y = Math.random() * H;
-      this.radius = 1 + Math.random() * 2;
-      this.directionX = Math.random() * 0.4 - 0.2;
-      this.directionY = Math.random() * 0.4 - 0.2;
-      this.color = `rgba(0, 255, 255, ${0.1 + Math.random() * 0.4})`;
-    }
+      function Particle() {
+        this.x = Math.random() * W;
+        this.y = Math.random() * H;
+        this.radius = 1 + Math.random() * 2;
+        this.directionX = Math.random() * 0.4 - 0.2;
+        this.directionY = Math.random() * 0.4 - 0.2;
+        this.color = `rgba(0, 255, 255, ${0.1 + Math.random() * 0.4})`;
+      }
 
-    Particle.prototype.draw = function() {
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
-      ctx.fillStyle = this.color;
-      ctx.fill();
-    };
+      Particle.prototype.draw = function() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+      };
 
-    Particle.prototype.update = function() {
-      this.x += this.directionX;
-      this.y += this.directionY;
+      Particle.prototype.update = function() {
+        this.x += this.directionX;
+        this.y += this.directionY;
 
-      if (this.x > W + this.radius || this.x < -this.radius) this.directionX *= -1;
-      if (this.y > H + this.radius || this.y < -this.radius) this.directionY *= -1;
+        if (this.x > W + this.radius || this.x < -this.radius) this.directionX *= -1;
+        if (this.y > H + this.radius || this.y < -this.radius) this.directionY *= -1;
 
-      this.draw();
-    };
+        this.draw();
+      };
 
-    function connectParticles() {
-      let i, j, distance, opacity;
-      for (i = 0; i < particleCount; i++) {
-        for (j = i + 1; j < particleCount; j++) {
-          distance = Math.sqrt(
-            Math.pow(particles[i].x - particles[j].x, 2) + 
-            Math.pow(particles[i].y - particles[j].y, 2)
-          );
+      function connectParticles() {
+        let i, j, distance, opacity;
+        for (i = 0; i < particleCount; i++) {
+          for (j = i + 1; j < particleCount; j++) {
+            distance = Math.sqrt(
+              Math.pow(particles[i].x - particles[j].x, 2) + 
+              Math.pow(particles[i].y - particles[j].y, 2)
+            );
 
-          if (distance < maxDistance) {
-            opacity = 1 - (distance / maxDistance);
-            ctx.strokeStyle = `rgba(0, 255, 255, ${opacity * 0.15})`; 
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.stroke();
+            if (distance < maxDistance) {
+              opacity = 1 - (distance / maxDistance);
+              ctx.strokeStyle = `rgba(0, 255, 255, ${opacity * 0.15})`; 
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.stroke();
+            }
           }
         }
       }
-    }
 
-    function init() {
-      W = window.innerWidth;
-      H = window.innerHeight;
-      canvas.width = W;
-      canvas.height = H;
+      function init() {
+        W = window.innerWidth;
+        H = window.innerHeight;
+        canvas.width = W;
+        canvas.height = H;
 
-      particles = [];
-      for (let i = 0; i < particleCount; i++) {
-        particles.push(new Particle());
+        particles = [];
+        for (let i = 0; i < particleCount; i++) {
+          particles.push(new Particle());
+        }
       }
-    }
 
-    function animate() {
-      requestAnimationFrame(animate);
+      function animate() {
+        requestAnimationFrame(animate);
+        
+        ctx.fillStyle = 'rgba(17, 25, 40, 0.15)'; 
+        ctx.fillRect(0, 0, W, H);
+
+        const gradient = ctx.createLinearGradient(0, 0, W, H);
+        gradient.addColorStop(0, 'rgba(17, 25, 40, 1)'); 
+        gradient.addColorStop(1, 'rgba(31, 42, 55, 1)');
+        ctx.fillStyle = gradient;
+        ctx.globalCompositeOperation = 'destination-over'; 
+        ctx.fillRect(0, 0, W, H);
+        ctx.globalCompositeOperation = 'source-over'; 
+
+        connectParticles();
+        for (let i = 0; i < particles.length; i++) {
+          particles[i].update();
+        }
+      }
+
+      // Optimasi untuk performa mobile
+      let resizeTimeout;
+      window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(init, 250);
+      });
       
-      ctx.fillStyle = 'rgba(17, 25, 40, 0.15)'; 
-      ctx.fillRect(0, 0, W, H);
+      init();
+      animate();
+    })();
+    // ------------------------------------
+    // AKHIR SCRIPT PARTIKEL
+    // ------------------------------------
 
-      const gradient = ctx.createLinearGradient(0, 0, W, H);
-      gradient.addColorStop(0, 'rgba(17, 25, 40, 1)'); 
-      gradient.addColorStop(1, 'rgba(31, 42, 55, 1)');
-      ctx.fillStyle = gradient;
-      ctx.globalCompositeOperation = 'destination-over'; 
-      ctx.fillRect(0, 0, W, H);
-      ctx.globalCompositeOperation = 'source-over'; 
+    // ------------------------------------
+    // SCRIPT CHATBOT DENGAN LOCAL STORAGE
+    // ------------------------------------
+    (function() {
+      const CHATS_STORAGE_KEY = 'xeno_ai_chats';
+      const chatContainer = document.getElementById('chat-container');
+      const promptInput = document.getElementById('prompt-input');
+      const sendBtn = document.getElementById('send-btn');
+      const fileInput = document.getElementById('file-input');
+      const filePreview = document.getElementById('file-preview');
+      const menuToggleBtn = document.getElementById('menu-toggle-btn');
+      const sidebarOverlay = document.getElementById('sidebar-overlay');
+      const chatHistoryEl = document.querySelector('.chat-history');
+      const newChatBtn = document.querySelector('.new-chat-btn');
+      
+      // Modal edit chat
+      const editModal = document.getElementById('edit-modal');
+      const closeEditModal = document.getElementById('close-edit-modal');
+      const cancelEdit = document.getElementById('cancel-edit');
+      const saveEdit = document.getElementById('save-edit');
+      const editChatNameInput = document.getElementById('edit-chat-name');
 
-      connectParticles();
-      for (let i = 0; i < particles.length; i++) {
-        particles[i].update();
+      // API Key - Ganti dengan kunci API yang valid
+      const API_KEY = 'AIzaSyAMHN1pYbAEa8YZDPCapBs7_8m5hMjgL80'; 
+      const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+
+      let files = [];
+      let allChats = [];
+      let currentChatIndex = -1; // -1 berarti chat baru
+      let chatToEditIndex = -1; // Indeks chat yang sedang diedit
+
+      // --- Local Storage & Data Management ---
+
+      function saveChats() {
+          try {
+              localStorage.setItem(CHATS_STORAGE_KEY, JSON.stringify(allChats));
+          } catch (e) {
+              console.error('Gagal menyimpan chat:', e);
+          }
       }
-    }
 
-    window.addEventListener('resize', init);
-    init();
-    animate();
-  })();
-  // ------------------------------------
-  // AKHIR SCRIPT PARTIKEL
-  // ------------------------------------
+      function loadChats() {
+          try {
+              const storedChats = localStorage.getItem(CHATS_STORAGE_KEY);
+              allChats = storedChats ? JSON.parse(storedChats) : [];
+              renderChatHistory();
+              if (allChats.length > 0) {
+                  selectChat(0);
+              } else {
+                  startNewChat();
+              }
+          } catch (e) {
+              console.error('Gagal memuat chat:', e);
+              startNewChat();
+          }
+      }
 
-  // ------------------------------------
-  // SCRIPT CHATBOT DENGAN LOCAL STORAGE
-  // ------------------------------------
-  (function() {
-    const CHATS_STORAGE_KEY = 'xeno_ai_chats';
-    const chatContainer = document.getElementById('chat-container');
-    const promptInput = document.getElementById('prompt-input');
-    const sendBtn = document.getElementById('send-btn');
-    const fileInput = document.getElementById('file-input');
-    const filePreview = document.getElementById('file-preview');
-    const menuToggleBtn = document.getElementById('menu-toggle-btn');
-    const sidebarOverlay = document.getElementById('sidebar-overlay');
-    const chatHistoryEl = document.querySelector('.chat-history');
-    const newChatBtn = document.querySelector('.new-chat-btn');
-    
-    // Modal edit chat
-    const editModal = document.getElementById('edit-modal');
-    const closeEditModal = document.getElementById('close-edit-modal');
-    const cancelEdit = document.getElementById('cancel-edit');
-    const saveEdit = document.getElementById('save-edit');
-    const editChatNameInput = document.getElementById('edit-chat-name');
+      function startNewChat() {
+          currentChatIndex = -1;
+          chatContainer.innerHTML = '';
+          addMessage('Halo! Saya Xeno AI, siap membantu Anda. Apa yang bisa saya rangkum atau buatkan untuk Anda hari ini?', 'ai');
+          renderChatHistory(); 
+      }
 
-    // MENGHILANGKAN API KEY KARENA KEAMANAN. SILAHKAN GANTI DENGAN KUNCI ASLI ANDA
-    const API_KEY = 'AIzaSyCWbmWrviNXncdoGNXaefVlK6sa_0tgdRg'; 
-    const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+      function renderChatHistory() {
+          chatHistoryEl.innerHTML = '';
 
-    let files = [];
-    let allChats = [];
-    let currentChatIndex = -1; // -1 berarti chat baru
-    let chatToEditIndex = -1; // Indeks chat yang sedang diedit
+          if (allChats.length === 0) {
+              chatHistoryEl.innerHTML = '<div style="padding: 20px; color: var(--gray); text-align: center;">Riwayat kosong. Mulai chat baru!</div>';
+              return;
+          }
 
-    // --- Local Storage & Data Management ---
-
-    function saveChats() {
-        localStorage.setItem(CHATS_STORAGE_KEY, JSON.stringify(allChats));
-    }
-
-    function loadChats() {
-        const storedChats = localStorage.getItem(CHATS_STORAGE_KEY);
-        allChats = storedChats ? JSON.parse(storedChats) : [];
-        renderChatHistory();
-        if (allChats.length > 0) {
-            selectChat(0);
-        } else {
-            startNewChat();
-        }
-    }
-
-    function startNewChat() {
-        currentChatIndex = -1;
-        chatContainer.innerHTML = '';
-        
-        // PESAN AWAL DIPERSINGKAT AGAR TIDAK MENDORONG INPUT AREA KE BAWAH SAAT LOADING PERTAMA
-        addMessage('Halo! Saya Xeno AI, siap membantu Anda. Apa yang bisa saya rangkum atau buatkan untuk Anda hari ini?', 'ai');
-        
-        renderChatHistory(); 
-    }
-
-    function renderChatHistory() {
-        chatHistoryEl.innerHTML = ''; 
-
-        if (allChats.length === 0) {
-            chatHistoryEl.innerHTML = '<div style="padding: 20px; color: var(--gray); text-align: center;">Riwayat kosong. Mulai chat baru!</div>';
-            return;
-        }
-
-        allChats.forEach((chat, index) => {
-            const chatItem = document.createElement('div');
-            chatItem.className = 'chat-item';
-            if (index === currentChatIndex) {
-                chatItem.classList.add('active');
-            }
-            
-            // Gunakan customTitle jika ada, jika tidak gunakan pesan pertama
-            const title = chat.customTitle || 
-                         (chat.messages.find(m => m.sender === 'user') 
-                          ? chat.messages.find(m => m.sender === 'user').text.substring(0, 30) + 
-                            (chat.messages.find(m => m.sender === 'user').text.length > 30 ? '...' : '') 
-                          : 'Chat Tanpa Pesan');
-
-            chatItem.title = title;
-            chatItem.innerHTML = `
-                <i class="fas fa-comment"></i> ${title}
-                <div class="chat-context-menu">
-                    <button class="context-btn edit-chat" title="Edit nama chat">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="context-btn delete-chat" title="Hapus chat">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            `;
-            
-            // Event listener untuk memilih chat
-            chatItem.addEventListener('click', (e) => {
-                if (!e.target.closest('.chat-context-menu')) {
-                    selectChat(index);
-                    toggleSidebar();
-                }
-            });
-            
-            // Event listener untuk edit chat
-            const editBtn = chatItem.querySelector('.edit-chat');
-            editBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                openEditModal(index);
-            });
-            
-            // Event listener untuk hapus chat
-            const deleteBtn = chatItem.querySelector('.delete-chat');
-            deleteBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                deleteChat(index);
-            });
-            
-            chatHistoryEl.appendChild(chatItem);
-        });
-    }
-
-    function selectChat(index) {
-        currentChatIndex = index;
-        const chat = allChats[index];
-        
-        chatContainer.innerHTML = ''; 
-        chat.messages.forEach(msg => {
-            addMessage(msg.text, msg.sender);
-        });
-
-        renderChatHistory(); 
-    }
-
-    // --- Fungsi untuk Edit dan Hapus Chat ---
-    
-    function openEditModal(index) {
-        chatToEditIndex = index;
-        const chat = allChats[index];
-        
-        // Gunakan customTitle jika ada, jika tidak gunakan pesan pertama
-        const currentTitle = chat.customTitle || 
+          allChats.forEach((chat, index) => {
+              const chatItem = document.createElement('div');
+              chatItem.className = 'chat-item';
+              if (index === currentChatIndex) {
+                  chatItem.classList.add('active');
+              }
+              
+              // Gunakan customTitle jika ada, jika tidak gunakan pesan pertama
+              const title = chat.customTitle || 
                            (chat.messages.find(m => m.sender === 'user') 
                             ? chat.messages.find(m => m.sender === 'user').text.substring(0, 30) + 
                               (chat.messages.find(m => m.sender === 'user').text.length > 30 ? '...' : '') 
                             : 'Chat Tanpa Pesan');
-        
-        editChatNameInput.value = currentTitle;
-        editModal.classList.add('active');
-    }
-    
-    function closeEditModalFunc() {
-        editModal.classList.remove('active');
-        chatToEditIndex = -1;
-    }
-    
-    function saveEditChat() {
-        if (chatToEditIndex >= 0) {
-            const newTitle = editChatNameInput.value.trim();
-            if (newTitle) {
-                allChats[chatToEditIndex].customTitle = newTitle;
-                saveChats();
-                renderChatHistory();
-            }
-        }
-        closeEditModalFunc();
-    }
-    
-    function deleteChat(index) {
-        if (confirm('Apakah Anda yakin ingin menghapus chat ini?')) {
-            allChats.splice(index, 1);
-            saveChats();
-            
-            if (allChats.length === 0) {
-                startNewChat();
-            } else if (currentChatIndex === index) {
-                // Jika chat yang dihapus sedang aktif, pilih chat sebelumnya atau chat pertama
-                const newIndex = index > 0 ? index - 1 : 0;
-                selectChat(newIndex);
-            } else if (currentChatIndex > index) {
-                // Jika chat yang dihapus berada sebelum chat aktif, sesuaikan indeks
-                currentChatIndex--;
-            }
-            
-            renderChatHistory();
-        }
-    }
 
-    // --- UI & Utility Functions ---
+              chatItem.innerHTML = `
+                  <i class="fas fa-comment"></i>
+                  <div class="chat-item-text">${title}</div>
+                  <div class="chat-context-menu">
+                      <button class="context-btn edit-chat" title="Edit nama chat">
+                          <i class="fas fa-edit"></i>
+                      </button>
+                      <button class="context-btn delete-chat" title="Hapus chat">
+                          <i class="fas fa-trash"></i>
+                      </button>
+                  </div>
+              `;
+              
+              // Event listener untuk memilih chat
+              chatItem.addEventListener('click', (e) => {
+                  if (!e.target.closest('.chat-context-menu')) {
+                      selectChat(index);
+                      toggleSidebar();
+                  }
+              });
+              
+              // Event listener untuk edit chat
+              const editBtn = chatItem.querySelector('.edit-chat');
+              editBtn.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  openEditModal(index);
+              });
+              
+              // Event listener untuk hapus chat
+              const deleteBtn = chatItem.querySelector('.delete-chat');
+              deleteBtn.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  deleteChat(index);
+              });
+              
+              chatHistoryEl.appendChild(chatItem);
+          });
+      }
 
-    function toggleSidebar() {
-        sidebarOverlay.classList.toggle('active');
-    }
+      function selectChat(index) {
+          currentChatIndex = index;
+          const chat = allChats[index];
+          
+          chatContainer.innerHTML = '';
+          chat.messages.forEach(msg => {
+              addMessage(msg.text, msg.sender);
+          });
 
-    function updateSendButton() {
-      sendBtn.disabled = promptInput.value.trim() === '' && files.length === 0;
-    }
-    
-    function addFiles(fileList) {
-        for (const file of fileList) {
-            files.push(file);
-            const fileItem = document.createElement('div');
-            fileItem.className = 'file-item';
-            const icon = document.createElement('i');
-            icon.className = 'fas fa-file';
-            // [Logika ikon tetap sama]
-            const nameSpan = document.createElement('span');
-            nameSpan.textContent = file.name;
-            const removeBtn = document.createElement('i');
-            removeBtn.className = 'file-remove fas fa-times';
-            removeBtn.addEventListener('click', () => {
-                files = files.filter(f => f !== file);
-                fileItem.remove();
-                updateSendButton();
-            });
-            fileItem.appendChild(icon);
-            fileItem.appendChild(nameSpan);
-            fileItem.appendChild(removeBtn);
-            filePreview.appendChild(fileItem);
-        }
-        updateSendButton();
-    }
-    
-    function addMessage(text, sender = 'ai') {
-        const msg = document.createElement('div');
-        msg.className = 'message ' + sender;
-        msg.textContent = text;
-        chatContainer.appendChild(msg);
-        
-        // PENTING: Gunakan scroll ke bawah pada #chat-container yang kini merupakan area scroll utama
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-        return msg;
-    }
-    
-    function addTypingIndicator() {
-        const typingBubble = document.createElement('div');
-        typingBubble.className = 'message ai';
-        typingBubble.setAttribute('aria-live', 'polite');
-        typingBubble.setAttribute('aria-label', 'AI sedang mengetik');
-        for (let i = 0; i < 3; i++) {
-            const dot = document.createElement('span');
-            dot.className = 'typing';
-            typingBubble.appendChild(dot);
-        }
-        chatContainer.appendChild(typingBubble);
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-        return typingBubble;
-    }
-    
-    function autoResizeTextarea() {
-      promptInput.style.height = 'auto';
-      promptInput.style.height = promptInput.scrollHeight + 'px';
-    }
+          renderChatHistory();
+      }
 
-    // --- Main Logic (Send Button) ---
-
-    sendBtn.addEventListener('click', async () => {
-      const prompt = promptInput.value.trim();
-      if (!prompt && files.length === 0) return;
-
-      // 1. Simpan prompt user
-      if (currentChatIndex === -1) {
-          const newChat = {
-              id: Date.now(),
-              messages: []
-          };
-          // Tambahkan pesan awal ke riwayat chat yang baru
-          newChat.messages.push({ text: 'Halo! Saya Xeno AI, siap membantu Anda. Apa yang bisa saya rangkum atau buatkan untuk Anda hari ini?', sender: 'ai' });
-          allChats.unshift(newChat); 
-          currentChatIndex = 0; 
+      // --- Fungsi untuk Edit dan Hapus Chat ---
+      
+      function openEditModal(index) {
+          chatToEditIndex = index;
+          const chat = allChats[index];
+          
+          // Gunakan customTitle jika ada, jika tidak gunakan pesan pertama
+          const currentTitle = chat.customTitle || 
+                             (chat.messages.find(m => m.sender === 'user') 
+                              ? chat.messages.find(m => m.sender === 'user').text.substring(0, 30) + 
+                                (chat.messages.find(m => m.sender === 'user').text.length > 30 ? '...' : '') 
+                              : 'Chat Tanpa Pesan');
+          
+          editChatNameInput.value = currentTitle;
+          editModal.classList.add('active');
+          editChatNameInput.focus();
       }
       
-      const userMessage = { text: prompt, sender: 'user' };
-      allChats[currentChatIndex].messages.push(userMessage);
-
-      if (prompt) addMessage(prompt, 'user');
-      if (files.length > 0) {
-        addMessage(`[Mengirim ${files.length} file]`, 'user');
-        allChats[currentChatIndex].messages.push({ text: `[Mengirim ${files.length} file]`, sender: 'user' });
+      function closeEditModalFunc() {
+          editModal.classList.remove('active');
+          chatToEditIndex = -1;
+      }
+      
+      function saveEditChat() {
+          if (chatToEditIndex >= 0) {
+              const newTitle = editChatNameInput.value.trim();
+              if (newTitle) {
+                  allChats[chatToEditIndex].customTitle = newTitle;
+                  saveChats();
+                  renderChatHistory();
+              }
+          }
+          closeEditModalFunc();
+      }
+      
+      function deleteChat(index) {
+          if (confirm('Apakah Anda yakin ingin menghapus chat ini?')) {
+              allChats.splice(index, 1);
+              saveChats();
+              
+              if (allChats.length === 0) {
+                  startNewChat();
+              } else if (currentChatIndex === index) {
+                  // Jika chat yang dihapus sedang aktif, pilih chat sebelumnya atau chat pertama
+                  const newIndex = index > 0 ? index - 1 : 0;
+                  selectChat(newIndex);
+              } else if (currentChatIndex > index) {
+                  // Jika chat yang dihapus berada sebelum chat aktif, sesuaikan indeks
+                  currentChatIndex--;
+              }
+              
+              renderChatHistory();
+          }
       }
 
-      saveChats(); 
+      // --- UI & Utility Functions ---
 
-      // [UI Reset & Typing Indicator]
-      promptInput.value = '';
-      filePreview.innerHTML = '';
-      files = [];
-      updateSendButton();
-      autoResizeTextarea();
-      sendBtn.disabled = true;
-      const typingBubble = addTypingIndicator();
+      function toggleSidebar() {
+          sidebarOverlay.classList.toggle('active');
+      }
 
+      function updateSendButton() {
+        sendBtn.disabled = promptInput.value.trim() === '' && files.length === 0;
+      }
+      
+      function addFiles(fileList) {
+          for (const file of fileList) {
+              files.push(file);
+              const fileItem = document.createElement('div');
+              fileItem.className = 'file-item';
+              const icon = document.createElement('i');
+              
+              // Tentukan ikon berdasarkan tipe file
+              if (file.type.startsWith('image/')) {
+                  icon.className = 'fas fa-file-image';
+              } else if (file.type.startsWith('video/')) {
+                  icon.className = 'fas fa-file-video';
+              } else if (file.type.startsWith('audio/')) {
+                  icon.className = 'fas fa-file-audio';
+              } else if (file.type.includes('pdf')) {
+                  icon.className = 'fas fa-file-pdf';
+              } else if (file.type.includes('word') || file.type.includes('document')) {
+                  icon.className = 'fas fa-file-word';
+              } else if (file.type.includes('excel') || file.type.includes('spreadsheet')) {
+                  icon.className = 'fas fa-file-excel';
+              } else {
+                  icon.className = 'fas fa-file';
+              }
+              
+              const nameSpan = document.createElement('span');
+              nameSpan.textContent = file.name.length > 15 ? file.name.substring(0, 15) + '...' : file.name;
+              nameSpan.title = file.name;
+              
+              const removeBtn = document.createElement('i');
+              removeBtn.className = 'file-remove fas fa-times';
+              removeBtn.addEventListener('click', () => {
+                  files = files.filter(f => f !== file);
+                  fileItem.remove();
+                  updateSendButton();
+              });
+              
+              fileItem.appendChild(icon);
+              fileItem.appendChild(nameSpan);
+              fileItem.appendChild(removeBtn);
+              filePreview.appendChild(fileItem);
+          }
+          updateSendButton();
+      }
+      
+      function addMessage(text, sender = 'ai') {
+          const msg = document.createElement('div');
+          msg.className = 'message ' + sender;
+          msg.textContent = text;
+          chatContainer.appendChild(msg);
+          
+          // Scroll ke bawah
+          chatContainer.scrollTop = chatContainer.scrollHeight;
+          return msg;
+      }
+      
+      function addTypingIndicator() {
+          const typingBubble = document.createElement('div');
+          typingBubble.className = 'message ai';
+          typingBubble.setAttribute('aria-live', 'polite');
+          typingBubble.setAttribute('aria-label', 'AI sedang mengetik');
+          for (let i = 0; i < 3; i++) {
+              const dot = document.createElement('span');
+              dot.className = 'typing';
+              typingBubble.appendChild(dot);
+          }
+          chatContainer.appendChild(typingBubble);
+          chatContainer.scrollTop = chatContainer.scrollHeight;
+          return typingBubble;
+      }
+      
+      function autoResizeTextarea() {
+        promptInput.style.height = 'auto';
+        promptInput.style.height = Math.min(promptInput.scrollHeight, 120) + 'px';
+      }
 
-      // 2. Kirim ke API dan tunggu balasan
-      try {
-        const requestBody = { 
-            contents: [{ parts: [{ text: prompt }] }]
-        };
+      // --- Main Logic (Send Button) ---
 
+      sendBtn.addEventListener('click', async () => {
+        const prompt = promptInput.value.trim();
+        if (!prompt && files.length === 0) return;
+
+        // 1. Simpan prompt user
+        if (currentChatIndex === -1) {
+            const newChat = {
+                id: Date.now(),
+                messages: [],
+                createdAt: new Date().toISOString()
+            };
+            // Tambahkan pesan awal ke riwayat chat yang baru
+            newChat.messages.push({ text: 'Halo! Saya Xeno AI, siap membantu Anda. Apa yang bisa saya rangkum atau buatkan untuk Anda hari ini?', sender: 'ai' });
+            allChats.unshift(newChat); 
+            currentChatIndex = 0; 
+        }
+        
+        const userMessage = { text: prompt, sender: 'user' };
+        allChats[currentChatIndex].messages.push(userMessage);
+
+        if (prompt) addMessage(prompt, 'user');
         if (files.length > 0) {
-          alert('Fitur unggah file dalam pengembangan. Hanya teks yang akan diproses.');
+          addMessage(`[Mengirim ${files.length} file]`, 'user');
+          allChats[currentChatIndex].messages.push({ text: `[Mengirim ${files.length} file]`, sender: 'user' });
         }
 
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-goog-api-key': API_KEY },
-          body: JSON.stringify(requestBody)
-        });
+        saveChats(); 
 
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status} - ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        const aiResponseText = (data.candidates && data.candidates[0] && data.candidates[0].content) 
-                                ? data.candidates[0].content.parts[0].text 
-                                : 'Tidak ada hasil yang ditemukan.';
-
-        typingBubble.textContent = aiResponseText;
-
-        // 3. Simpan balasan AI
-        allChats[currentChatIndex].messages.push({ text: aiResponseText, sender: 'ai' });
-        saveChats();
-        renderChatHistory(); 
-
-      } catch (err) {
-        typingBubble.textContent = `Terjadi kesalahan: ${err.message}`;
-        allChats[currentChatIndex].messages.push({ text: `Terjadi kesalahan: ${err.message}`, sender: 'ai' });
-        saveChats();
-      } finally {
-        sendBtn.disabled = false;
-      }
-    });
-
-    // --- Event Listeners & Initialization ---
-
-    promptInput.addEventListener('input', () => {
+        // [UI Reset & Typing Indicator]
+        promptInput.value = '';
+        filePreview.innerHTML = '';
+        files = [];
         updateSendButton();
         autoResizeTextarea();
-    });
-    promptInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        if (!sendBtn.disabled) sendBtn.click();
-      }
-    });
+        sendBtn.disabled = true;
+        const typingBubble = addTypingIndicator();
 
-    fileInput.addEventListener('change', (e) => {
-      if (e.target.files.length > 0) {
-        addFiles(e.target.files);
-        e.target.value = ''; // Reset input agar file yang sama bisa diupload lagi
-      }
-    });
-    
-    document.getElementById('upload-btn').addEventListener('click', () => {
-      fileInput.click();
-    });
+        // 2. Kirim ke API dan tunggu balasan
+        try {
+          const requestBody = { 
+              contents: [{ parts: [{ text: prompt }] }]
+          };
 
-    menuToggleBtn.addEventListener('click', toggleSidebar);
-    sidebarOverlay.addEventListener('click', (e) => {
-        if (e.target.id === 'sidebar-overlay') {
-            toggleSidebar();
+          if (files.length > 0) {
+            // Untuk WebView, kita tidak bisa mengunggah file sebenarnya tanpa backend
+            // Tapi kita bisa menambahkan informasi file ke prompt
+            const fileNames = files.map(f => f.name).join(', ');
+            requestBody.contents[0].parts[0].text += `\n\n[File terlampir: ${fileNames}]`;
+          }
+
+          const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json', 
+              'X-goog-api-key': API_KEY 
+            },
+            body: JSON.stringify(requestBody)
+          });
+
+          if (!response.ok) {
+            throw new Error(`Error: ${response.status} - ${response.statusText}`);
+          }
+
+          const data = await response.json();
+          const aiResponseText = (data.candidates && data.candidates[0] && data.candidates[0].content) 
+                                  ? data.candidates[0].content.parts[0].text 
+                                  : 'Tidak ada hasil yang ditemukan.';
+
+          typingBubble.textContent = aiResponseText;
+
+          // 3. Simpan balasan AI
+          allChats[currentChatIndex].messages.push({ text: aiResponseText, sender: 'ai' });
+          saveChats();
+          renderChatHistory(); 
+
+        } catch (err) {
+          console.error('Error API:', err);
+          typingBubble.textContent = `Terjadi kesalahan: ${err.message}`;
+          allChats[currentChatIndex].messages.push({ text: `Terjadi kesalahan: ${err.message}`, sender: 'ai' });
+          saveChats();
+        } finally {
+          sendBtn.disabled = false;
         }
-    });
+      });
 
-    newChatBtn.addEventListener('click', () => {
-        startNewChat();
-        toggleSidebar(); 
-    });
+      // --- Event Listeners & Initialization ---
 
-    // Event listeners untuk modal edit
-    closeEditModal.addEventListener('click', closeEditModalFunc);
-    cancelEdit.addEventListener('click', closeEditModalFunc);
-    saveEdit.addEventListener('click', saveEditChat);
-    
-    // Tutup modal saat klik di luar modal
-    editModal.addEventListener('click', (e) => {
-        if (e.target === editModal) {
-            closeEditModalFunc();
+      promptInput.addEventListener('input', () => {
+          updateSendButton();
+          autoResizeTextarea();
+      });
+      
+      promptInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          if (!sendBtn.disabled) sendBtn.click();
         }
-    });
-    
-    // Submit dengan Enter di input modal
-    editChatNameInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            saveEditChat();
-        }
-    });
+      });
 
-    // Inisialisasi
-    updateSendButton();
-    autoResizeTextarea();
-    loadChats(); 
-  })();
-</script> 
- </body>
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+          addFiles(e.target.files);
+          e.target.value = ''; // Reset input agar file yang sama bisa diupload lagi
+        }
+      });
+      
+      document.getElementById('upload-btn').addEventListener('click', () => {
+        fileInput.click();
+      });
+
+      menuToggleBtn.addEventListener('click', toggleSidebar);
+      sidebarOverlay.addEventListener('click', (e) => {
+          if (e.target.id === 'sidebar-overlay') {
+              toggleSidebar();
+          }
+      });
+
+      newChatBtn.addEventListener('click', () => {
+          startNewChat();
+          toggleSidebar(); 
+      });
+
+      // Event listeners untuk modal edit
+      closeEditModal.addEventListener('click', closeEditModalFunc);
+      cancelEdit.addEventListener('click', closeEditModalFunc);
+      saveEdit.addEventListener('click', saveEditChat);
+      
+      // Tutup modal saat klik di luar modal
+      editModal.addEventListener('click', (e) => {
+          if (e.target === editModal) {
+              closeEditModalFunc();
+          }
+      });
+      
+      // Submit dengan Enter di input modal
+      editChatNameInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+              saveEditChat();
+          }
+      });
+
+      // Inisialisasi
+      updateSendButton();
+      autoResizeTextarea();
+      loadChats();
+      
+      // Perbaikan untuk WebView: Mencegah zoom pada input focus
+      document.addEventListener('touchstart', function(e) {
+        if (e.touches.length > 1) {
+          e.preventDefault();
+        }
+      });
+      
+      let lastTouchEnd = 0;
+      document.addEventListener('touchend', function(e) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+          e.preventDefault();
+        }
+        lastTouchEnd = now;
+      }, false);
+      
+    })();
+  </script>
+</body>
 </html>
